@@ -12,14 +12,32 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'billguard-super-secret-key-123'
 
 # --- POSTGRESQL CONFIGURATION ---
-DB_USER = "postgres"
-DB_PASS = "Dinesh@2006"  # Change this to your local PostgreSQL password
-DB_HOST = "localhost"
-DB_NAME = "billguard"
+import os
+from urllib.parse import urlparse
+import psycopg2
+
+# Automatically use Render's cloud database URL if available, otherwise fallback to local settings
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db_connection():
     """Establishes a raw connection to PostgreSQL."""
-    return psycopg2.connect(host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASS)
+    if DATABASE_URL:
+        url = urlparse(DATABASE_URL)
+        return psycopg2.connect(
+            database=url.path[1:],
+            user=url.username,
+            password=url.password,
+            host=url.hostname,
+            port=url.port
+        )
+    else:
+        # Local development fallback
+        return psycopg2.connect(
+            host="localhost", 
+            database="billguard", 
+            user="postgres", 
+            password="Dinesh@2006"
+        )
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
