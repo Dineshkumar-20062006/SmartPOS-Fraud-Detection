@@ -1,0 +1,57 @@
+Accessing the databases
+
+
+Here is your single, unified reference guide for accessing and managing the databases for both your BillGuard AI platform (PostgreSQL) and your ABC Supermarket POS software (SQLite).
+
+Part 1: BillGuard AI Database (PostgreSQL)
+BillGuard AI runs on a local PostgreSQL server, storing your secure ledgers, scanned receipt history, and user credit balances.
+
+1. How to View and Manage the Data (via pgAdmin GUI)
+Open pgAdmin from your Windows Start Menu.
+
+Expand Servers -> PostgreSQL -> Databases -> click your BillGuard database.
+
+Open the Query Tool (Tools -> Query Tool) and run these standard commands:
+
+View all records:
+
+SQL
+SELECT * FROM users;
+SELECT * FROM issued_bills;
+SELECT * FROM bills;
+Wipe all scanned logs and reset credits for a clean demo:
+
+SQL
+TRUNCATE TABLE bills, issued_bills CASCADE;
+UPDATE users SET total_credits = 0.0;
+2. How to Wipe via Python (Terminal Shortcut)
+Open your BillGuard terminal with your virtual environment active, type python, and run:
+
+Python
+import psycopg2
+conn = psycopg2.connect(dbname="billguard_db", user="postgres", password="YOUR_PASSWORD_HERE", host="localhost")
+cur = conn.cursor()
+cur.execute("TRUNCATE TABLE bills, issued_bills CASCADE; UPDATE users SET total_credits = 0.0;")
+conn.commit()
+print("BillGuard database wiped successfully!")
+exit()
+Part 2: ABC Supermarket POS Database (SQLite)
+Your POS software uses a lightweight, file-based SQLite database stored directly inside your project folder.
+
+1. How to View the Database Visually
+Option A (No Install): Go to sqliteviewer.app in your browser and drag-and-drop your POS .db file from C:\Users\sneka\OneDrive\Desktop\bill - ui changed\bill.
+
+Option B (VS Code): Install the SQLite Viewer extension in VS Code and click on your .db file in the sidebar to view tables like products and sales like a spreadsheet.
+
+2. How to Reset / Delete the Data
+The Full Reset (Fastest): Go to your POS folder (C:\Users\sneka\OneDrive\Desktop\bill - ui changed\bill), delete the local .db file, and restart python app_api.py. It will automatically recreate a fresh database.
+
+Wipe Sales Only via Python: Open your POS terminal, activate your virtual environment, type python, and run:
+
+Python
+from app_api import db, app, Sale  # Adjust 'Sale' to match your transaction model name if different
+with app.app_context():
+    db.session.query(Sale).delete()
+    db.session.commit()
+    print("POS sales cleared successfully!")
+exit()

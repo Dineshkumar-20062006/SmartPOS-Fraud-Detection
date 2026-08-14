@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>D-Mart Bill Scanner — AI Fraud Detection</title>
+  <meta name="description" content="Upload your D-Mart bill for instant AI-powered OCR extraction and duplicate fraud detection."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🛒</span>
+        <div>
+          <h1 class="logo-title">BillGuard AI</h1>
+          <p class="logo-sub">D-Mart OCR Fraud Detection</p>
+        </div>
+      </div>
+      <div class="header-profile">
+        <span class="user-greeting">Hi, <strong id="userName">User</strong></span>
+        <div class="header-badge" id="userCredits">🪙 0 Credits</div>
+        {% if current_user.username == 'admin' %}
+        <a href="/admin" class="btn-clear" style="position:relative; top:0; right:0; margin-left:10px; text-decoration:none; border-color:var(--accent2); color:var(--accent2);">Admin Panel</a>
+        {% endif %}
+        <a href="/logout" class="btn-clear" style="position:relative; top:0; right:0; margin-left:10px; text-decoration:none;">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Upload Card -->
+    <section class="card upload-card">
+      <h2 class="card-title">Scan Your Bill</h2>
+      <p class="card-sub">Upload a D-Mart receipt image to extract details and check for duplicates.</p>
+
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">📄</div>
+        <p class="drop-label">Drag &amp; drop your bill image here</p>
+        <p class="drop-hint">or click to browse</p>
+        <input type="file" id="fileInput" accept="image/*" hidden/>
+      </div>
+
+      <div class="preview-wrap" id="previewWrap" style="display:none;">
+        <img id="previewImg" src="" alt="Bill preview" class="preview-img"/>
+        <button class="btn-clear" id="clearBtn">✕ Clear</button>
+      </div>
+
+      <button class="btn-scan" id="scanBtn" disabled>
+        <span id="scanBtnText">⚡ Scan Bill</span>
+        <span id="scanBtnLoader" style="display:none;">
+          <span class="spinner"></span> Scanning…
+        </span>
+      </button>
+    </section>
+
+    <!-- Results Card -->
+    <section class="card results-card" id="resultsCard" style="display:none;">
+      <div class="results-header">
+        <h2 class="card-title">Scan Result</h2>
+        <div class="status-badge" id="statusBadge"></div>
+      </div>
+
+      <div class="fraud-banner" id="fraudBanner" style="display:none;">
+        <span class="fraud-icon">🚨</span>
+        <div>
+          <strong>DUPLICATE BILL DETECTED</strong>
+          <p>This bill has already been scanned and claimed.</p>
+        </div>
+      </div>
+
+      <div class="success-banner" id="successBanner" style="display:none;">
+        <span class="success-icon">✅</span>
+        <div>
+          <strong>ORIGINAL BILL VERIFIED</strong>
+          <p>Bill logged successfully for credit allocation.</p>
+        </div>
+      </div>
+
+      <div class="warn-banner" id="warnBanner" style="display:none;">
+        <span class="warn-icon">⚠️</span>
+        <div>
+          <strong>COULD NOT READ BILL CLEARLY</strong>
+          <p>Please upload a clearer image of your bill. Ensure the bill number and date are visible and not blurry.</p>
+        </div>
+      </div>
+
+      <div class="data-grid" id="dataGrid"></div>
+
+      <div class="hash-box" id="hashBox" style="display:none;">
+        <span class="hash-label">SHA-256 Hash</span>
+        <code id="hashValue"></code>
+      </div>
+    </section>
+
+    <!-- History Panel -->
+    <section class="card history-card">
+      <h2 class="card-title">📋 Scan History</h2>
+      <p class="card-sub">All previously verified bills stored in the database.</p>
+      <div class="history-list" id="historyList">
+        <p class="empty-history">No bills scanned yet.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>BillGuard AI — Powered by EasyOCR &amp; Flask &nbsp;|&nbsp; SHA-256 Duplicate Detection</p>
+  </footer>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin ERP — BillGuard AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">🛒</span>
+        <h2>BillGuard ERP</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active">📊 Dashboard</a>
+        <a href="#users" class="nav-item">👥 User Management</a>
+        <a href="#bills" class="nav-item">📄 Bill Logs</a>
+        <div class="nav-divider"></div>
+        <a href="/logout" class="nav-item text-danger">🚪 Logout</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-badge">Admin Privileges</div>
+        <p>Logged in as <strong>{{ current_user.username }}</strong></p>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="admin-content">
+      <header class="top-nav">
+        <div class="top-nav-title">
+          <h1>Supermarket Intelligence System</h1>
+          <p>Real-time fraud detection & credit allocation</p>
+        </div>
+        <div class="top-nav-actions">
+          <span class="system-status"><span class="pulse-dot"></span> System Online</span>
+        </div>
+      </header>
+
+      <main class="dashboard-main">
+        <!-- Metric Cards -->
+        <section class="metrics-grid" id="dashboard">
+          <div class="metric-card">
+            <div class="metric-icon" style="background: rgba(0, 230, 118, 0.1); color: #00e676;">👥</div>
+            <div class="metric-details">
+              <h3>Total Users</h3>
+              <h2>{{ users|length }}</h2>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon" style="background: rgba(0, 176, 255, 0.1); color: #00b0ff;">📄</div>
+            <div class="metric-details">
+              <h3>Total Scans</h3>
+              <h2>{{ bills|length }}</h2>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon" style="background: rgba(255, 23, 68, 0.1); color: #ff1744;">🚨</div>
+            <div class="metric-details">
+              <h3>Fraud Attempts</h3>
+              <h2>{{ fake_bills }}</h2>
+            </div>
+          </div>
+          <div class="metric-card">
+            {% set total_issued = users | sum(attribute='total_credits') %}
+            <div class="metric-icon" style="background: rgba(255, 179, 0, 0.1); color: #ffb300;">🪙</div>
+            <div class="metric-details">
+              <h3>Credits Issued</h3>
+              <h2>{{ "%.1f"|format(total_issued) }}</h2>
+            </div>
+          </div>
+        </section>
+
+        <!-- Two Column Layout: Users & Recent Bills -->
+        <div class="dashboard-panels">
+          
+          <!-- Users Panel -->
+          <section class="panel" id="users">
+            <div class="panel-header">
+              <h2>User Management</h2>
+              <button class="btn-outline">Export CSV</button>
+            </div>
+            <div class="panel-body">
+              <div class="table-responsive">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>User ID</th>
+                      <th>Account Name</th>
+                      <th>Credit Balance</th>
+                      <th>Total Scans</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for u in users %}
+                    <tr>
+                      <td class="col-id">#{{ u.id }}</td>
+                      <td class="col-name">
+                        <div class="user-avatar">{{ u.username[0]|upper }}</div>
+                        {{ u.username }} 
+                        {% if u.username == 'admin' %} <span class="badge badge-admin">Superadmin</span> {% endif %}
+                      </td>
+                      <td class="col-credits">
+                        {% if u.username != 'admin' %}
+                        <form action="/admin/edit_credit/{{ u.id }}" method="POST" class="inline-edit-form">
+                          <input type="number" step="0.01" name="credits" value="{{ "%.2f"|format(u.total_credits) }}" class="input-credit">
+                          <button type="submit" class="btn-save" title="Save">Save</button>
+                        </form>
+                        {% else %}
+                        🪙 {{ "%.2f"|format(u.total_credits) }}
+                        {% endif %}
+                      </td>
+                      <td class="col-center">{{ u.bills|length }}</td>
+                      <td class="col-actions">
+                        {% if u.username != 'admin' %}
+                        <form action="/admin/delete_user/{{ u.id }}" method="POST" onsubmit="return confirm('WARNING: Are you sure you want to delete user {{ u.username }} and ALL their scanned bills? This cannot be undone.');">
+                          <button type="submit" class="btn-delete">Revoke Access</button>
+                        </form>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Bills Panel -->
+          <section class="panel" id="bills">
+            <div class="panel-header">
+              <h2>Global Bill Log</h2>
+              <div style="display: flex; gap: 8px;">
+                <a href="?filter=all#bills" class="btn-outline" {% if current_filter == 'all' %}style="background: var(--surface2); border-color: var(--accent2); color: var(--accent2);"{% endif %}>All Scans</a>
+                <a href="?filter=original#bills" class="btn-outline" {% if current_filter == 'original' %}style="background: var(--surface2); border-color: var(--accent); color: var(--accent);"{% endif %}>Originals</a>
+                <a href="?filter=fake#bills" class="btn-outline" {% if current_filter == 'fake' %}style="background: rgba(255,23,68,0.1); border-color: var(--danger); color: var(--danger);"{% endif %}>Fakes</a>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="table-responsive">
+                <table class="erp-table">
+                  <thead>
+                    <tr>
+                      <th>Ref ID</th>
+                      <th>User</th>
+                      <th>Date / Time</th>
+                      <th>INR Amount</th>
+                      <th>Verification</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for b in bills %}
+                    <tr>
+                      <td class="col-id">#{{ b.id }}</td>
+                      <td class="col-user">{{ b.user.username }}</td>
+                      <td class="col-date">{{ b.scan_date.strftime('%d %b %Y, %H:%M') }}</td>
+                      <td class="col-amount">₹ {{ "%.2f"|format(b.amount) }}</td>
+                      <td class="col-status">
+                        {% if b.is_duplicate %}
+                          <span class="badge badge-danger">Fake/Void</span>
+                        {% else %}
+                          <span class="badge badge-success">+{{ "%.2f"|format(b.credits_earned) }} Cr</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                      <td colspan="5" class="empty-state">No bills scanned recently.</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Smooth scrolling for sidebar
+    document.querySelectorAll('.nav-item[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+  </script>
+</body>
+</html>
